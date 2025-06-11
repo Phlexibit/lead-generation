@@ -49,8 +49,6 @@ export default function LeadManagement() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const router = useRouter()
 
-  console.log('editingMember:', editingMember)
-
   useEffect(() => {
     if (!authLoading) {
       if (!user || !isAuthenticated) {

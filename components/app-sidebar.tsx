@@ -17,9 +17,11 @@ import {
   Bot,
   MapPin,
   UsersRound,
+  Plus,
   Crosshair,
   Goal
 } from "lucide-react"
+
 import { useTheme } from "next-themes"
 import { useAuth } from "@/hooks/use-auth"
 
@@ -118,9 +120,11 @@ const data = {
       items: [],
     },
   ],
-    adminItems: [
-      { title: "User Management", url: "/admin/users", icon: UsersRound, items: [] },
-    ]
+  adminItems: [
+    { title: "User Management", url: "/admin/users", icon: UsersRound, items: [] },
+    // { title: "Settings", url: "/admin/settings", icon: Settings, items: [] },
+     { title: "Add Company",    url: "/admin/companies", icon: Plus, items: [] },
+  ]
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -224,7 +228,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{`${user.firstName} ${user.lastName}`}</span>
+                    <span className="truncate font-semibold">{`${user.first_name} ${user.last_name}`}</span>
+                    {/* <span className="truncate text-xs">{userRole}</span> */}
                   </div>
                   <ChevronUp className="ml-auto size-4" />
                 </SidebarMenuButton>

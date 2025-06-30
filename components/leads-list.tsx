@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -36,7 +36,8 @@ import {
   XCircle,
   PhoneOff,
   AlertCircle,
-  HelpCircle
+  HelpCircle,
+  Bot
 } from "lucide-react"
 
 import {
@@ -46,6 +47,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet"
+import { match } from "assert"
+import { Avatar, AvatarFallback } from "@radix-ui/react-avatar"
 
 interface Role {
   _id: string;
@@ -67,7 +70,10 @@ interface Lead {
   callSummary?: string;
   followUpReason?: string;
 }
-
+interface Message {
+  sender: "user" | "bot";
+  text: string;
+}
 export const mockLeads = [
   {
     id: "1",
@@ -156,7 +162,19 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedLead, setSelectedLead] = useState<any | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isTruncated, setIsTruncated] = useState(false);
+  const textRef = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
 
+  useEffect(() => {
+    const element = textRef?.current;
+    if (element) {
+      setIsTruncated(element.scrollHeight > element.clientHeight);
+    }
+  }, [selectedLead?.call_summary]);
+
+  const toggleExpand = () => setIsExpanded(!isExpanded);
   const handleViewLead = (lead: any) => {
     setSelectedLead(lead)
     setIsDrawerOpen(true)
@@ -272,7 +290,110 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
       </div>
     );
   };
+  const extractJsObjectFromConvoString = (convo: string) => {
+    if (!convo || typeof convo !== 'string') return [];
+    const lines = convo.trim().split('\n').filter(line => line.trim());
+    const conversation = lines.map((line, index) => {
+      console.log('line', line)
+      let match =  line.match(/^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}) - (agent|user): (.+)/);
+      if (match) {  
+        console.log('inside match', match)
+        const today = new Date().toISOString().split('T')[0];
+        return {
+          id: index,
+          time: `${match[1]}`,
+          sender: match[2],
+          message: match[3]
+        };
+      }return {
+        id: index,
+        time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        sender: 'Unknown',
+        message: line.trim()
+      };
+    });
+    // Return the chat UI using map
+    return conversation.map((chat) => (
+      <div key={chat.id} className="mb-4 mt-4">
+        {chat.sender === 'agent' ? (
+          // Agent Message
+          // <div className="w-full max-w-md rounded-2xl shadow-xl">
+          //   <div className="flex-1">
+          //     <div className="flex items-center space-x-2 mb-1">
+          //       <div className="w-10 h-10 bg-gray-900 text-white rounded-full flex items-center justify-center text-black font-semibold shadow-lg">
+          //       A
+          //     </div>                
+          //     </div>
+          //     <div className="bg-white border border-gray-200 rounded-lg rounded-tl-none p-3 max-w-md shadow-sm hover:shadow-md transition-shadow">
+          //       <p className="text-sm text-black leading-relaxed">{chat.message}</p>
+          //     </div>
+          //   </div>
+            
+          // </div>
+          <div className="flex items-start justify-start space-x-3">
+  <div className="flex-shrink-0">
+    <div className="w-10 h-10 bg-muted text-black rounded-full flex items-center justify-center font-semibold ">
+      <Bot className="h-5 w-5" />
+    </div>
+  </div>
 
+  <div className="flex-1">
+    <div className="flex items-center space-x-2 mb-1">
+      {/* <span className="text-xs text-gray-500 px-2 py-1 rounded-full">Agent</span> */}
+        
+    </div>
+
+    <div className="bg-muted text-black rounded-lg rounded-tl-none px-4 py-2 max-w-md ">
+      <p className="text-sm leading-relaxed">{chat.message}</p>
+      </div>
+       <span className="text-xs text-gray-500 px-2 py-1 rounded-full justify-start ">{chat.time}</span>
+  </div>
+</div>
+
+        ) : (
+          // User Message
+          <div className="flex items-start justify-end space-x-3">
+            <div className="flex-1">
+              <div className="flex items-center justify-end space-x-2 mb-1">
+              </div>
+              <div className="bg-neutral-900 text-black rounded-lg px-4 py-2 rounded-tr-none p-3 max-w-md ml-auto ">
+                <p className="text-sm text-white leading-relaxed">{chat.message}</p>
+              </div>
+              <span className="text-xs text-gray-500 px-2 py-1 rounded-full flex items-center justify-end">
+                  {chat.time}
+                </span>
+            </div>
+            
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-neutral-900 text-white rounded-full flex items-center justify-center font-semibold shadow-lg">
+                U
+              </div>
+            </div>
+          </div>
+        )}
+        {chat.sender === 'agent' && (
+          <Avatar className="h-8 w-8 shrink-0">
+            <AvatarFallback className="text-black flex ">
+              
+              
+                {/* <span className="text-xs text-gray-500 px-2 py-1 rounded-full">
+                    {chat.time}
+                  </span>  */}
+            </AvatarFallback>
+          </Avatar>
+        )}
+      </div>
+    ));
+  };
+  // Helper function to format time
+  const formatTime = (timeString: string) => {
+    try {
+      const date = new Date(timeString.replace(' ', 'T'));
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch {
+      return timeString;
+    }
+  };
   return (
     <>
       <Card>
@@ -458,9 +579,25 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
                 <CardContent>
                   <div className="space-y-3">
                     <div>
-                      <p className="text-sm text-gray-700 mt-1 leading-relaxed">
+                      {/* <p className="text-sm text-gray-700 mt-1 leading-relaxed">
                         {selectedLead.call_summary ? selectedLead.call_summary : "-"}
+                      </p> */}
+                       <p
+                        ref={textRef}
+                        className={`text-sm text-gray-700 mt-1 leading-relaxed ${
+                          isExpanded && !isTruncated ? 'line-clamp-3' : ''
+                        }`}
+                      >
+                        {selectedLead.call_summary || '*No call data*'}
                       </p>
+                      {!isTruncated && selectedLead?.call_summary?.length > 20 && (
+                        <button
+                          onClick={toggleExpand}
+                          className="text-blue-500 text-sm mt-2"
+                        >
+                          {isExpanded ? 'Read More' : 'Read Less'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -474,6 +611,7 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
                   {/* <CardTitle className="text-md font-semibold">Conversation History</CardTitle>
                     <ChevronDown className="h-4 w-4 text-gray-400" /> */}
                   {/* </div> */}
+                   
                 </CardHeader>
                 <CardContent>
                   <div className="text-sm text-gray-500">
@@ -495,6 +633,35 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
                   </div>
                 </CardContent>
               </Card>
+              {/* <Card>
+  <CardHeader className="pb-0">
+    Conversation History
+  </CardHeader>
+  <CardContent>
+    <div>{extractJsObjectFromConvoString(selectedLead.full_conversation)}</div>
+  </CardContent>
+</Card> */}
+<Card>
+  <CardHeader className="pb-0">
+    <h3 className="text-md font-semibold">Conversation History</h3>
+  </CardHeader>
+  <CardContent>
+    <div className={`text-sm text-gray-500 ${expanded ? "" : "line-clamp-3"}`}>
+      {
+      selectedLead?.full_conversation?.length > 0 ?
+      extractJsObjectFromConvoString(selectedLead.full_conversation) : '*No data found*'
+      }
+    </div>
+     {selectedLead?.call_summary?.length > 20 && (
+    <button
+      onClick={() => setExpanded(!expanded)}
+      className="mt-2 text-xs text-blue-600 hover:underline focus:outline-none"
+    >
+      {expanded ? "Show less" : "Show more"}
+    </button>
+     )}
+  </CardContent>
+</Card>
             </div>
           )}
         </SheetContent>

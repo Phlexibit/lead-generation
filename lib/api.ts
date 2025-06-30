@@ -1,9 +1,8 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
-const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
-
-
+// const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
+const API_BASE_URL="https://5930-2409-4080-901d-15c8-e807-a385-a90a-77bf.ngrok-free.app/api"
 const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
 
 const getAuthToken = () => localStorage.getItem('authToken')
@@ -67,6 +66,7 @@ export const authApi = {
     try {
       const token = getAuthToken();
       if (!token) return null;
+      
       const currentUser = getUserFromLocalStorage();
       if (!currentUser) return null;
       const parsedUser = JSON.parse(currentUser) as User;
@@ -122,8 +122,7 @@ export const leadsApi = {
 }
 
 export const companyApi = {
-
-  createCompany: async (companyData: any): Promise<any> => {
+ createCompany: async (companyData: any): Promise<any> => {
     const response = await fetchApi<any>('/company', {
       method: 'POST',
       body: JSON.stringify(companyData),
@@ -131,5 +130,4 @@ export const companyApi = {
     return response;
   },
 
-
-};
+}

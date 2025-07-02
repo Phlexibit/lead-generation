@@ -256,13 +256,14 @@ export default function LeadManagement() {
     onEdit: handleEditClick,
     onDelete: handleDeleteLead,
   })
-
+const role="customer"
   return (
     <DashboardLayout>
       {isLeadLoading ? (
         <LeadSkeleton />
       ) : (
         <>
+        
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <div>
@@ -274,14 +275,15 @@ export default function LeadManagement() {
                   <Upload className="mr-2 h-4 w-4" />
                   Export CSV
                 </Button>
+                {role!=="customer" && 
                 <Button onClick={() => setShowAddDialog(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Lead
-                </Button>
+                </Button>}
               </div>
             </div>
 
-
+        
             {/* <input id="csv-upload" type="file" accept=".csv" onChange={handleCSVUpload} className="hidden" /> */}
 
             <Tabs defaultValue="list" className="space-y-4">

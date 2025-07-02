@@ -189,7 +189,7 @@ export default function SiteVisitManagement() {
     onEdit: handleEditClick,
     onDelete: handleDeleteLead,
   })
-
+const role="customer"
   return (
     <DashboardLayout>
       {isLeadLoading ? (
@@ -207,10 +207,11 @@ export default function SiteVisitManagement() {
               <Upload className="mr-2 h-4 w-4" />
               Export CSV
             </Button> */}
+            {role!=="customer" &&
                 <Button onClick={() => setShowAddDialog(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Site Visit
-                </Button>
+                </Button>}
               </div>
             </div>
 

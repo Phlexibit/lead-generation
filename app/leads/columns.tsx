@@ -192,11 +192,13 @@ export const createColumns = ({
     header: "Actions",
     cell: ({ row }) => {
       const lead = row.original
+      
       return (
         <div className="flex space-x-2">
           <Button variant="outline" size="sm" onClick={() => onView(lead)}>
             <Eye className="h-4 w-4" />
           </Button>
+          
           <Button variant="outline" size="sm" onClick={() => onEdit(lead)}>
             <Edit className="h-4 w-4" />
           </Button>
@@ -206,6 +208,7 @@ export const createColumns = ({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </AlertDialogTrigger>
+            
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
@@ -215,6 +218,7 @@ export const createColumns = ({
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
+                role!=="customer" &&
                 <AlertDialogAction onClick={() => onDelete(lead._id)}>Delete</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

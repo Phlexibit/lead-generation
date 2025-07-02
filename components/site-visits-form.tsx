@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { JSXElementConstructor, Key, ReactElement, ReactNode, ReactPortal, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -137,6 +137,18 @@ export default function SiteVisitForm({
 
     onSubmit(formData)
   }
+const properties = [
+  { id: "1", name: "Naroda Lavish", location: "Naroda" },
+  { id: "2", name: "Sky Villa", location: "Satellite" },
+  { id: "3", name: "Green Valley Apartments", location: "Bopal" },
+  { id: "4", name: "Royal Heights", location: "Prahladnagar" },
+  { id: "5", name: "Sunshine Residency", location: "Vastrapur" },
+  { id: "6", name: "Heritage Park", location: "Ambawadi" },
+  { id: "7", name: "Golden Tower", location: "CG Road" },
+  { id: "8", name: "Crystal Palace", location: "Maninagar" },
+  { id: "9", name: "Dream Homes", location: "Gota" },
+  { id: "10", name: "Elite Square", location: "SG Highway" }
+];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -166,7 +178,7 @@ export default function SiteVisitForm({
         </div>
 
         {/* Property */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Label htmlFor="property">Property *</Label>
           <Input
             id="property"
@@ -176,7 +188,26 @@ export default function SiteVisitForm({
             className={errors.property ? "border-red-500" : ""}
           />
           {errors.property && <p className="text-sm text-red-500">{errors.property}</p>}
-        </div>
+        </div> */}
+        <div className="space-y-2">
+  <Label htmlFor="property">Property *</Label>
+  <Select 
+    value={formData.property} 
+    onValueChange={(value) => handleInputChange("property", value)}
+  >
+    <SelectTrigger className={errors.property ? "border-red-500" : ""}>
+      <SelectValue placeholder="Select a property..." />
+    </SelectTrigger>
+    <SelectContent>
+      {properties.map((property: { id: Key | null | undefined; name: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined; location: string | number | bigint | boolean | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | ReactPortal | Promise<string | number | bigint | boolean | ReactPortal | ReactElement<unknown, string | JSXElementConstructor<any>> | Iterable<ReactNode> | null | undefined> | null | undefined }) => (
+        <SelectItem key={property.id} value={property.name}>
+          {property.name} - {property.location}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+  {errors.property && <p className="text-sm text-red-500">{errors.property}</p>}
+</div>
 
         {/* Status */}
         <div className="space-y-2">

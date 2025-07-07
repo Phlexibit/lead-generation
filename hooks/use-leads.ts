@@ -4,12 +4,14 @@ import React from "react"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTeamStore } from "@/stores/team-store"
-import { leadsApi } from "@/lib/api"
+import { leadsApi, teamApi, TeamMember } from "@/lib/api"
 import { Pagination } from "@/components/ui/pagination"
 import { useWebSocket } from "@/lib/websocket"
+import { Lead } from "@/components/lead-form"
 
 export const useLeadList = () => {
   const queryClient = useQueryClient();
+  const addLeadMutation = useMutation({ /* ... */ });
 
   // WebSocket subscription for real-time lead updates
   // useWebSocket('leadUpdate', (data) => {
@@ -40,24 +42,37 @@ export const useLeadList = () => {
   }
 }
 
-// export function useTeam() {
-//   const { members, setMembers, addMember, updateMember, removeMember } = useTeamStore()
-//   const queryClient = useQueryClient()
+export function useLead() {
+  // const { members, setMembers, addMember, updateMember, removeMember } = useTeamStore()
+  const queryClient = useQueryClient()
 
-//   const { data: teamMembers, isLoading } = useQuery({
-//     queryKey: ["teamMembers"],
-//     queryFn: teamApi.getTeamMembers,
-//     staleTime: 5 * 60 * 1000,
-//   })
+  // const { data: teamMembers, isLoading } = useQuery({
+  //   queryKey: ["teamMembers"],
+  //   queryFn: teamApi.getTeamMembers,
+  //   staleTime: 5 * 60 * 1000,
+  // })
 
-//   const addMemberMutation = useMutation({
-//     mutationFn: (member: Omit<TeamMember, "_id">) => teamApi.addTeamMember(member),
-//     onSuccess: (newMember) => {
-//       addMember(newMember)
-//       queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
-//     },
-//   })
+  // const addMemberMutation = useMutation({
+  //   mutationFn: (member: Omit<TeamMember, "_id">) => teamApi.addTeamMember(member),
+  //   onSuccess: (newMember) => {
+  //     addMember(newMember)
+  //     queryClient.invalidateQueries({ queryKey: ["teamMembers"] })
+  //   },
+  // })
+  const addLeadMutation = useMutation({
+    mutationFn: (lead: Omit<any, "_id">) => leadsApi.addLead(lead),
+    onSuccess: (newLead) => {
+      // addMember(newLead)
+console.log("success")
+      queryClient.invalidateQueries({ queryKey: ["getAllLeads"] })
+    },
+  })
+  
 
+
+function addMember(newMember: TeamMember) {
+  throw new Error("Function not implemented.")
+}
 //   const updateMemberMutation = useMutation({
 //     mutationFn: ({ id, member }: { id: string; member: Partial<TeamMember> }) =>
 //       teamApi.updateTeamMember(id, member),
@@ -91,17 +106,25 @@ export const useLeadList = () => {
 //       setMembers(teamMembers)
 //     }
 //   }, [teamMembers, setMembers])
+function addLead(newLead: any) {
+  console.log('this is add lead called')
+  throw new Error("Function not implemented.")
+}
 
-//   return {
+  return {
 //     members: members.length > 0 ? members : teamMembers || [],
 //     isLoading,
 //     addMember: addMemberMutation.mutate,
+       addLead: addLeadMutation.mutate,
 //     addMembersCsv: addMembersCsvMutation.mutate,
 //     updateMember: (id: string, member: Partial<TeamMember>) => updateMemberMutation.mutate({ id, member }),
 //     deleteMember: deleteMemberMutation.mutate,
 //     isAddingMember: addMemberMutation.isPending,
+      isAddingLead: addLeadMutation.isPending,
 //     isAddingMembersCsv: addMembersCsvMutation.isPending,
 //     isUpdatingMember: updateMemberMutation.isPending,
 //     // isDeletingMember: deleteMemberMutation.isPending,
-//   }
-// }
+ }
+ 
+}
+

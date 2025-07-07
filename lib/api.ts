@@ -5,8 +5,21 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 // const API_BASE_URL = "http://localhost:5000/api"
 
 
-const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
-
+//const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
+const CUSTOM_ENDPOINTS = {
+  '/manual-lead-entry': process.env.NEXT_PUBLIC_ANALYTICS_API_URL,
+  '/edit-lead': process.env.NEXT_PUBLIC_API_PYTHON_URL,
+}
+const buildUrl = (endpoint: string) => {
+  const customUrl = CUSTOM_ENDPOINTS[endpoint as keyof typeof CUSTOM_ENDPOINTS]
+  
+  if (customUrl) {
+    return `${customUrl}${endpoint}`
+  }
+  
+  // Use default base URL
+  return `${API_BASE_URL}${endpoint}`
+}
 const getAuthToken = () => localStorage.getItem('authToken')
 
 const getUserFromLocalStorage = () => localStorage.getItem('currentUser')
@@ -140,6 +153,13 @@ export const leadsApi = {
       throw error;
     }
   },
+ addLead: async (leadData: any): Promise<any> => {
+    const response = await fetchApi<{ lead: any }>('/manual-lead-entry', {
+      method: 'POST',
+      body: JSON.stringify(leadData),
+    });
+    return response;
+  }
 }
 
 // export const companyApi = {
@@ -180,6 +200,7 @@ export const companyApi = {
   //     throw error;
   //   }
   // },
+ 
 
   // updateCompany: async (id: string, companyData: Partial<any>): Promise<any> => {
   //   try {
@@ -216,8 +237,6 @@ export const companyApi = {
   // }
 }
 
-
-
 export const teamApi = {
   getTeamMembers: async (): Promise<TeamMember[]> => {
     try {
@@ -250,7 +269,7 @@ export const teamApi = {
       throw error;
     }
   },
-
+  
   addTeamMembersCsv: async (members: Omit<TeamMember, "_id">[]): Promise<TeamMember[]> => {
     try {
       const response = await fetchApi<{ users: TeamMember[] }>('/csv-add-member', {

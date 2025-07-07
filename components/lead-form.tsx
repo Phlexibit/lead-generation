@@ -12,6 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useLead } from "@/hooks/use-leads"
 
 export interface Lead {
   id?: string;
@@ -34,10 +35,12 @@ interface LeadFormProps {
   initialData?: Lead;
   onSubmit: (data: Omit<Lead, "id" | "createdAt">) => void;
   onCancel: () => void;
+
   isEditing?: boolean;
 }
 
 export default function LeadForm({ initialData, onSubmit, onCancel, isEditing = false }: LeadFormProps) {
+  const { addLead } = useLead()
   const [formData, setFormData] = useState<Omit<Lead, "id" | "createdAt">>({
     name: initialData?.name || "",
     email: initialData?.email || "",
@@ -116,6 +119,7 @@ export default function LeadForm({ initialData, onSubmit, onCancel, isEditing = 
     }
 
     onSubmit(formData)
+    addLead(formData)
   }
 
   return (

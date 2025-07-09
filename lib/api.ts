@@ -1,18 +1,19 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+//const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
 // const API_BASE_URL = "https://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/api"
 // const API_BASE_URL = "http://localhost:5000/api"
-
+const API_BASE_URL="https://25d0537a96cd.ngrok-free.apps"
 
 //const buildUrl = (endpoint: string) => `${API_BASE_URL}${endpoint}`
 const CUSTOM_ENDPOINTS = {
-  '/manual-lead-entry': process.env.NEXT_PUBLIC_ANALYTICS_API_URL,
+  '/manual-lead-entry': process.env.NEXT_PUBLIC_API_PYTHON_URL,
   '/edit-lead': process.env.NEXT_PUBLIC_API_PYTHON_URL,
 }
 const buildUrl = (endpoint: string) => {
   const customUrl = CUSTOM_ENDPOINTS[endpoint as keyof typeof CUSTOM_ENDPOINTS]
-  
+  console.log("customUrl",customUrl)
+  console.log("endpoint",endpoint)
   if (customUrl) {
     return `${customUrl}${endpoint}`
   }
@@ -161,7 +162,16 @@ export const leadsApi = {
     return response;
   }
 }
-
+export const projectsApi = {
+  getAllprojects: async (): Promise<any> => {
+    try {
+      const response = await fetchApi<{ response: any }>('/leads');
+      return response || null;
+    } catch (error) {
+      throw error;
+    }
+  },
+}
 // export const companyApi = {
 //   createCompany: async (companyData: any): Promise<any> => {
 //     const response = await fetchApi<any>('/company', {

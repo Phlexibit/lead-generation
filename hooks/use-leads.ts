@@ -4,7 +4,7 @@ import React from "react"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTeamStore } from "@/stores/team-store"
-import { leadsApi, teamApi, TeamMember } from "@/lib/api"
+import { leadsApi, projectsApi, teamApi, TeamMember } from "@/lib/api"
 import { Pagination } from "@/components/ui/pagination"
 import { useWebSocket } from "@/lib/websocket"
 import { Lead } from "@/components/lead-form"
@@ -67,6 +67,14 @@ console.log("success")
       queryClient.invalidateQueries({ queryKey: ["getAllLeads"] })
     },
   })
+   const addProjectMutation = useMutation({
+    mutationFn: (lead: Omit<any, "_id">) => projectsApi.getAllprojects(),
+    onSuccess: (newProject) => {
+      // addMember(newLead)
+console.log("success")
+      queryClient.invalidateQueries({ queryKey: ["getAllProjects"] })
+    },
+  })
   
 
 
@@ -116,6 +124,7 @@ function addLead(newLead: any) {
 //     isLoading,
 //     addMember: addMemberMutation.mutate,
        addLead: addLeadMutation.mutate,
+       addProject: addProjectMutation.mutate,
 //     addMembersCsv: addMembersCsvMutation.mutate,
 //     updateMember: (id: string, member: Partial<TeamMember>) => updateMemberMutation.mutate({ id, member }),
 //     deleteMember: deleteMemberMutation.mutate,

@@ -19,7 +19,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Plus, Upload } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useTeamStore } from "@/stores/team-store"
-import { useTeam } from "@/hooks/use-team"
+import { useTeam, useTeamMemberList } from "@/hooks/use-team"
 
 
 interface AddTeamMember {
@@ -35,8 +35,8 @@ interface AddTeamMember {
 export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
   const {
-    members: apiMembers,
-    isLoading: teamLoading,
+    // members: apiMembers,
+    // isLoading: teamLoading,
     addMember: addTeamMember,
     addMembersCsv,
     updateMember: updateTeamMember,
@@ -45,6 +45,11 @@ export default function LeadManagement() {
     isAddingMembersCsv,
     isUpdatingMember
   } = useTeam()
+
+  const {
+    members: apiMembers,
+    isLoading: teamLoading,
+  } = useTeamMemberList()
 
   const members = apiMembers
 
@@ -55,23 +60,21 @@ export default function LeadManagement() {
   const [editingMember, setEditingMember] = useState<TeamMember | null>(null)
   const router = useRouter()
 
-  console.log('editingMember:', editingMember)
+  useEffect(() => {
+    if (!authLoading) {
+      if (!user || !isAuthenticated) {
+        console.log('No authenticated user, redirecting to login')
+        router.push("/")
+        return
+      }
 
-  //   useEffect(() => {
-  //     if (!authLoading) {
-  //       if (!user || !isAuthenticated) {
-  //         console.log('No authenticated user, redirecting to login')
-  //         router.push("/")
-  //         return
-  //       }
-
-  //       if (user.role !== "Admin") {
-  //         console.log('User is not admin, redirecting to dashboard')
-  //         router.push("/dashboard")
-  //         return
-  //       }
-  //     }
-  //   }, [authLoading, router, user, isAuthenticated])
+      if (user.role === "CompanyEmployee") {
+        console.log('User is not admin, redirecting to dashboard')
+        router.push("/dashboard")
+        return
+      }
+    }
+  }, [authLoading, router, user, isAuthenticated])
 
   const handleAddMember = (memberData: any) => {
     let payload = {
@@ -82,7 +85,7 @@ export default function LeadManagement() {
       email: memberData.email,
       password: memberData.password,
       role: memberData.roles[0].name,
-      projects: [memberData.projects[0]._id],
+      projects: memberData.projects,
       companyId: user?.companyId,
     }
     addTeamMember(payload);
@@ -121,7 +124,7 @@ export default function LeadManagement() {
             const firstName = values[2]
             const lastName = values[3]
             const phoneNo = values[4]
-            const roles = [values[5]] 
+            const roles = [values[5]]
             const password = values[6] || 'default123'
             const projects = values[7]?.split(',').map(p => p.trim()) || []
 
@@ -214,6 +217,7 @@ export default function LeadManagement() {
                 data={members}
                 columns={createTeamMemberColumns({
                   onEdit: (member) => {
+                    console.log('Editing member:', member)
                     setEditingMember(member)
                     setShowEditDialog(true)
                   },

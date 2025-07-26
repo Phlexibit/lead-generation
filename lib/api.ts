@@ -41,6 +41,13 @@ async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise
     headers,
   })
 
+  // Redirect to login if unauthorized
+  if (response.status === 401) {
+    localStorage.removeItem('authToken')
+    localStorage.removeItem('currentUser')
+    window.location.href = "/"
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
     throw new Error(error.message || 'An error occurred')
@@ -140,9 +147,9 @@ export const authApi = {
 }
 
 export const leadsApi = {
-  getAllLeads: async (): Promise<any> => {
+  getAllLeads: async (projectId?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ response: any }>('/leads');
+      const response = await fetchApi<{ response: any }>(`/leads?projectId=${projectId}`);
       return response || null;
     } catch (error) {
       throw error;
@@ -350,9 +357,9 @@ export const teamApi = {
 }
 
 export const dashboardApi = {
-  getDashboardData: async (): Promise<any> => {
+  getDashboardData: async (projectId?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ data: any }>(`/dashboard-data`);
+      const response = await fetchApi<{ data: any }>(`/dashboard-data?projectId=${projectId}`);
       if (!response) return null;
       return response
     } catch (error) {
@@ -362,15 +369,14 @@ export const dashboardApi = {
 }
 
 export const siteVisitsApi = {
-  getSiteVisits: async (): Promise<any> => {
+  getSiteVisits: async (projectId?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ data: any }>(`/site-visits`);
-      if (!response) return null;
-      return response
+      const response = await fetchApi<{ response: any }>(`/site-visits?projectId=${projectId}`);
+      return response;
     } catch (error) {
       throw error;
     }
-  },
+  }
 }
 
 export const projectsApi = {

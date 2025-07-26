@@ -1,20 +1,18 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 
 let token;
+let selectedProjectId;
 if (typeof window !== 'undefined') {
   token = localStorage.getItem("authToken")
+  selectedProjectId = localStorage.getItem("selectedProjectId")
 }
 
 // Convert HTTP URL to WebSocket URL  
 // const WS_BASE_URL = `wss://satyasankalpdevelopers-ai-voice-agent-1.onrender.com/ws?token=${token}`;
 
-// const WS_BASE_URL = `ws://localhost:5000/ws?token=${token}`; // local
+// const WS_BASE_URL = `ws://localhost:5000/ws?token=${token}&project_id=${selectedProjectId}`; // local
 
-// const WS_BASE_URL = `wss://cd42-2409-4080-9db4-4b8a-889b-f78b-62a-2b0c.ngrok-free.app/test-websocket`; 
-
-// const WS_BASE_URL = `wss://b961-2409-4080-901d-15c8-edc1-7086-5a20-7dff.ngrok-free.app/ws?token=${token}`; 
-
-const WS_BASE_URL = `${process.env.NEXT_PUBLIC_API_WS_BASE_URL}ws?token=${token}`;
+const WS_BASE_URL = `${process.env.NEXT_PUBLIC_API_WS_BASE_URL}ws?token=${token}&project_id=${selectedProjectId}`;
 
 class WebSocketService {
   private ws: WebSocket | null = null;
@@ -38,7 +36,7 @@ class WebSocketService {
       this.ws = new WebSocket(WS_BASE_URL);
 
       this.ws.onopen = () => {
-        // console.log('WebSocket connected');
+        console.log('WebSocket connected');
         this.reconnectAttempts = 0;
         this.isConnected = true;
         this.notifyConnectionStatusListeners();
@@ -49,26 +47,27 @@ class WebSocketService {
           const jsonData = JSON.parse(event.data);
           const { type, payload, data } = jsonData;
 
-          console.log('jsonData', jsonData)
+          console.log('WebSocket message received:', { type, data: jsonData });
           
-          this.listeners.forEach(callbacks => {
-            callbacks.forEach(callback => callback(jsonData));
-          });
+          // Only notify listeners that are specifically subscribed to this event type
+          if (type && this.listeners.has(type)) {
+            this.listeners.get(type)?.forEach(callback => {
+              console.log(`Calling callback for event type: ${type}`);
+              callback(jsonData);
+            });
+          } else {
+            console.warn(`No listeners found for event type: ${type}`);
+          }
 
-          // if (type && this.listeners.has(type)) {
-          //   // this.listeners.get(type)?.forEach(callback => callback(data)); // local
-          //   this.listeners.get(type)?.forEach(callback => callback(jsonData)); // stage
-          // }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
       };
 
       this.ws.onclose = () => {
-        // console.log('WebSocket disconnected');
+        console.log('WebSocket disconnected');
         this.isConnected = false;
         this.notifyConnectionStatusListeners();
-        // this.handleReconnect();
       };
 
       this.ws.onerror = (error) => {
@@ -80,7 +79,6 @@ class WebSocketService {
       console.error('Error creating WebSocket connection:', error);
       this.isConnected = false;
       this.notifyConnectionStatusListeners();
-      // this.handleReconnect();
     }
   }
 
@@ -92,6 +90,7 @@ class WebSocketService {
   }
 
   public subscribe(event: string, callback: (data: any) => void) {
+    console.log(`Subscribing to WebSocket event: "${event}"`);
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
@@ -99,6 +98,7 @@ class WebSocketService {
   }
 
   public unsubscribe(event: string, callback: (data: any) => void) {
+    console.log(`Unsubscribing from WebSocket event: "${event}"`);
     this.listeners.get(event)?.delete(callback);
   }
 
@@ -125,7 +125,6 @@ class WebSocketService {
 
   public addConnectionStatusListener(listener: (isConnected: boolean) => void) {
     this.connectionStatusListeners.add(listener);
-    // Immediately notify the new listener of current status
     listener(this.isConnected);
   }
 
@@ -147,17 +146,13 @@ export function useWebSocket(event: string, callback: (data: any) => void) {
 
   useEffect(() => {
     const handleMessage = (data: any) => {
-      // Console log the message received
-      console.log(`WebSocket message received for event "${event}":`, data);
-
+      console.log(`Processing WebSocket message for event "${event}":`, data);
       callbackRef.current(data);
     };
 
-    console.log(`Subscribing to WebSocket event: "${event}"`);
     websocketService.subscribe(event, handleMessage);
 
     return () => {
-      console.log(`Unsubscribing from WebSocket event: "${event}"`);
       websocketService.unsubscribe(event, handleMessage);
     };
   }, [event]);
@@ -172,11 +167,6 @@ export function useWebSocket(event: string, callback: (data: any) => void) {
 // Custom hook for monitoring WebSocket connection status
 export function useWebSocketConnection() {
   const [isConnected, setIsConnected] = useState(websocketService.getConnectionStatus());
-
-  setTimeout(() => {
-    const check = websocketService.getConnectionStatus();
-    // console.log('check', check)
-  }, 1000);
 
   useEffect(() => {
     const handleConnectionStatus = (status: boolean) => {
@@ -193,4 +183,4 @@ export function useWebSocketConnection() {
   return { isConnected };
 }
 
-export default websocketService; 
+export default websocketService;

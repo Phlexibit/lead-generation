@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { AlertCircle, Bot, CheckCircle, ChevronDown, ChevronUp, Flame, HelpCircle, Locate, LocateOff, LucideSnowflake, Pen, PhoneOff, Plus, Upload, User, Volume2, XCircle } from "lucide-react"
+import { AlertCircle, Bot, CheckCircle, ChevronDown, ChevronUp, Flame, HelpCircle, Locate, LocateOff, LucideSnowflake, Pen, PhoneOff, Plus, Upload, User, XCircle } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
 import { useLeadList, useLeads } from "@/hooks/use-leads"
 import LeadForm, { Lead } from "@/components/lead-form"
@@ -31,8 +31,6 @@ import { DataTable } from "@/components/data-table"
 import { useWebSocket } from "@/lib/websocket"
 import { QueryClient, useQueryClient } from "@tanstack/react-query"
 import { Avatar, AvatarFallback } from "@radix-ui/react-avatar"
-import { useDashboardStore } from "@/stores/dashboard-store"
-import ModernAudioPlayer from "./MediaPlayer"
 
 interface AddTeamMember {
   username: string;
@@ -286,16 +284,6 @@ const processConversationArray = (conversations: RawConversationMessage[]): Chat
 
 export default function LeadManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
-  const { selectedProjectId } = useDashboardStore()
-  const queryClient = useQueryClient()
-
-  // Effect to refetch leads when project changes
-  useEffect(() => {
-    if (selectedProjectId) {
-      queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId] })
-    }
-  }, [selectedProjectId, queryClient])
-
   const {
     leads,
     pagination,
@@ -325,161 +313,67 @@ export default function LeadManagement() {
   const router = useRouter()
   const [selectedLead, setSelectedLead] = useState<any | null>(null)
   const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  // const queryClient = useQueryClient()
-
+  const queryClient = useQueryClient()
 
   const { send: sendWebSocketMessage } = useWebSocket('new_lead', (newLead: any) => {
     console.log('New lead received via WebSocket:', newLead)
     handleNewLeadReceived(newLead)
   })
 
-  // WebSocket for audio updates
-  const { send: sendAudioUpdateMessage } = useWebSocket('lead_audio_update', (audioUpdate: any) => {
-    console.log('Lead audio update received via WebSocket:', audioUpdate)
-    handleLeadAudioUpdate(audioUpdate)
-  })
-
-
-const handleLeadAudioUpdate = (audioUpdate: any) => {
-  console.log('Handling lead audio update:', audioUpdate);
-
-  // Extract audio data - handle both direct data and nested payload
-  const updateData = audioUpdate.data || audioUpdate.payload || audioUpdate;
-  const { lead_id, audio_data, timestamp } = updateData;
-
-  if (!lead_id || !audio_data) {
-    console.warn('Invalid audio update data:', audioUpdate);
-    return;
-  }
-
-  console.log('Processing audio update for lead:', lead_id);
-
-  // Update the leads list in cache
-  queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
-    if (!oldData?.data) {
-      console.warn('No existing lead data to update with audio');
-      return oldData;
-    }
-
-    const updatedData = {
-      ...oldData,
-      data: oldData.data.map((lead: any) => {
-        if (lead._id === lead_id || lead.id === lead_id) {
-          console.log('Updating lead with audio data:', lead_id);
-          return {
-            ...lead,
-            call_recording: {
-              ...lead.call_recording,
-              audio_r2_url: audio_data.audio_r2_url,
-              elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id
-            },
-            audio_data: audio_data
-          };
-        }
-        return lead;
-      })
-    };
-
-    console.log('Updated leads with audio data for lead:', lead_id);
-    return updatedData;
-  });
-
-  // Update selected lead if it's the one being updated
-  if (selectedLead && (selectedLead._id === lead_id || selectedLead.id === lead_id)) {
-    console.log('Updating selected lead with audio data');
-    setSelectedLead(prevLead => ({
-      ...prevLead,
-      call_recording: {
-        ...prevLead.call_recording,
-        audio_r2_url: audio_data.audio_r2_url,
-        elevenlabs_conversation_id: audio_data.elevenlabs_conversation_id || prevLead.call_recording?.elevenlabs_conversation_id,
-      },
-      audio_data: audio_data
-    }));
-  }
-};
 
   const handleNewLeadReceived = (newLead: any) => {
     console.log('Handling new lead:', newLead);
 
-    // Skip welcome messages
     if (newLead?.type === "welcome") {
       console.log('Ignoring welcome message', newLead);
       return;
     }
 
-    // Extract the actual lead data - handle both direct data and nested payload
-    const leadData = newLead.data || newLead.payload || newLead;
-
-    if (!leadData || typeof leadData !== 'object') {
-      console.warn('Invalid lead data received:', newLead);
-      return;
-    }
-
-    console.log('Processing lead data:', leadData);
-
     queryClient.setQueryData(['getAllLeads'], (oldData: any) => {
+
       if (!oldData) {
-        console.log('Creating new data structure with first lead');
         return {
-          data: [leadData],
+          data: [newLead],
           pagination: null
-        };
+        }
       }
 
-      // Check if lead already exists to prevent duplicates
-      const existingLead = oldData.data?.find((lead: any) =>
-        lead._id === leadData._id ||
-        lead.id === leadData.id ||
-        (lead.contact_number === leadData.contact_number &&
-          lead.first_name === leadData.first_name)
-      );
+      // Check if lead already exists to avoid duplicates
+      // const leadExists = oldData.data?.some((lead: any) => lead._id === newLead._id)
+      // if (leadExists) {
+      //   console.log('Lead already exists, not adding duplicate');
+      //   return oldData
+      // }
 
-      if (existingLead) {
-        console.log('Lead already exists, merging data:', leadData._id || leadData.id);
-        // Update existing lead instead of adding duplicate
-        const updatedData = {
-          ...oldData,
-          data: oldData.data.map((lead: any) => {
-            if (lead._id === leadData._id ||
-              lead.id === leadData.id ||
-              (lead.contact_number === leadData.contact_number &&
-                lead.first_name === leadData.first_name)) {
-              return { ...lead, ...leadData };
-            }
-            return lead;
-          })
-        };
-        console.log('Updated existing lead in data structure');
-        return updatedData;
-      }
-
-      // Add new lead to the beginning
+      // Create new data structure with the new lead added to the beginning
       const updatedData = {
         ...oldData,
-        data: [leadData, ...(oldData.data || [])]
-      };
-
-      console.log('Added new lead to data structure:', leadData._id || leadData.id);
-      return updatedData;
-    });
-
-    // Force a re-render to ensure UI updates
-    queryClient.invalidateQueries({
-      queryKey: ["getAllLeads", selectedProjectId],
-      exact: false
-    });
-  };
-
-  useEffect(() => {
-    if (!authLoading) {
-      if (!user || !isAuthenticated) {
-        console.log('No authenticated user, redirecting to login')
-        router.push("/")
-        return
+        data: [newLead, ...(oldData.data || [])]
       }
-    }
-  }, [authLoading, router, user, isAuthenticated])
+
+      console.log('Updated data structure:', updatedData);
+      return updatedData
+    })
+
+    // Optional: Show a toast notification
+    // toast.success('New lead received!')
+  }
+
+  // useEffect(() => {
+  //   if (!authLoading) {
+  //     if (!user || !isAuthenticated) {
+  //       console.log('No authenticated user, redirecting to login')
+  //       router.push("/")
+  //       return
+  //     }
+
+  //     if (user.roles[0].name !== "Admin") {
+  //       console.log('User is not admin, redirecting to dashboard')
+  //       router.push("/dashboard")
+  //       return
+  //     }
+  //   }
+  // }, [authLoading, router, user, isAuthenticated])
 
   const handleAddLead = (leadData: any) => {
     console.log('leadData', leadData)
@@ -537,140 +431,109 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
   const showExpandButton = parsedConversations.length > 3;
 
 
-  console.log('selectedLead', selectedLead)
+  console.log('selectedLead.created_at', selectedLead?.created_at)
 
-  // Utility: CSV export function with UTF-8 BOM for Excel Unicode support
-  const exportToCSV = (data, filename = 'leads_export.csv') => {
-    const headers = [
-      'First Name',
-      'Last Name',
-      'Contact Number',
-      'Email',
-      'Lead Type',
-      'Requirement',
-      'Project Name',
-      'Call Status',
-      'Visit Booking Date',
-      'Call Summary',
-      'Hot Lead',
-      'Call Priority',
-      'Reached',
-      'Created At',
-      'Updated At'
-    ];
+// Utility: CSV export function with UTF-8 BOM for Excel Unicode support
+const exportToCSV = (data, filename = 'leads_export.csv') => {
+  const headers = [
+    'First Name',
+    'Last Name',
+    'Contact Number',
+    'Email',
+    'Lead Type',
+    'Requirement',
+    'Project Name',
+    'Call Status',
+    'Visit Booking Date',
+    'Call Summary',
+    'Hot Lead',
+    'Call Priority',
+    'Reached',
+    'Created At',
+    'Updated At'
+  ];
 
-    const csvData = data.map(lead => [
-      lead.first_name || '',
-      lead.last_name || '',
-      lead.contact_number || '',
-      lead.email || '',
-      lead.lead_type || '',
-      lead.requirement || '',
-      lead.project_name || lead.projectName || '',
-      lead.call_connection_status || '',
-      lead.visit_booking_datetime ? new Date(lead.visit_booking_datetime).toLocaleString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }) : '',
-      lead.call_summary || '',
-      lead.is_hot_lead ? 'Yes' : 'No',
-      lead.call_priority || '',
-      lead.reached ? 'Yes' : 'No',
-      lead.created_at || lead.createdAt ? new Date(lead.created_at || lead.createdAt).toLocaleString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }) : '',
-      lead.updated_at || lead.updatedAt ? new Date(lead.updated_at || lead.updatedAt).toLocaleString('en-IN', {
-        timeZone: 'Asia/Kolkata',
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      }) : ''
-    ]);
+  const csvData = data.map(lead => [
+    lead.first_name || '',
+    lead.last_name || '',
+    lead.contact_number || '',
+    lead.email || '',
+    lead.lead_type || '',
+    lead.requirement || '',
+    lead.project_name || lead.projectName || '',
+    lead.call_connection_status || '',
+    lead.visit_booking_datetime ? new Date(lead.visit_booking_datetime).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }) : '',
+    lead.call_summary || '',
+    lead.is_hot_lead ? 'Yes' : 'No',
+    lead.call_priority || '',
+    lead.reached ? 'Yes' : 'No',
+    lead.created_at || lead.createdAt ? new Date(lead.created_at || lead.createdAt).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }) : '',
+    lead.updated_at || lead.updatedAt ? new Date(lead.updated_at || lead.updatedAt).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    }) : ''
+  ]);
 
-    const csvContent = [headers, ...csvData];
+  const csvContent = [headers, ...csvData];
 
-    const csvString = csvContent.map(row =>
-      row.map(field => {
-        if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
-          return `"${field.replace(/"/g, '""')}"`;
-        }
-        return field;
-      }).join(',')
-    ).join('\n');
+  const csvString = csvContent.map(row =>
+    row.map(field => {
+      if (typeof field === 'string' && (field.includes(',') || field.includes('"') || field.includes('\n'))) {
+        return `"${field.replace(/"/g, '""')}"`;
+      }
+      return field;
+    }).join(',')
+  ).join('\n');
 
-    // Add UTF-8 BOM for Excel compatibility
-    const BOM = '\uFEFF';
-    const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
+  // Add UTF-8 BOM for Excel compatibility
+  const BOM = '\uFEFF';
+  const blob = new Blob([BOM + csvString], { type: 'text/csv;charset=utf-8;' });
 
-    const link = document.createElement('a');
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', filename);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    }
-  };
+  const link = document.createElement('a');
+  if (link.download !== undefined) {
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+};
 
-  // Call this from your component with leads array
-  const handleExportCSV = () => {
-    if (!leads || leads.length === 0) {
-      alert('No leads data to export');
-      return;
-    }
-
-    const timestamp = new Date().toISOString().split('T')[0];
-    const filename = `leads_export_${timestamp}.csv`;
-
-    exportToCSV(leads, filename);
-  };
-
-  const getAudioUrl = (lead: any) => {
-    // First check if audio_data exists (WebSocket case)
-    if (lead?.audio_data?.audio_r2_url) {
-      return lead.audio_data.audio_r2_url;
-    }
-    // Fallback to call_recording (Database case)
-    if (lead?.call_recording?.audio_r2_url) {
-      return lead.call_recording.audio_r2_url;
-    }
-    return null;
+// Call this from your component with leads array
+const handleExportCSV = () => {
+  if (!leads || leads.length === 0) {
+    alert('No leads data to export');
+    return;
   }
 
-  // Helper function to get recording metadata
-  const getRecordingMetadata = (lead: any) => {
-    // Check WebSocket data first
-    if (lead?.audio_data) {
-      return {
-        conversationId: lead.audio_data.elevenlabs_conversation_id || lead.call_recording?.elevenlabs_conversation_id,
-        createdAt: lead.audio_data.timestamp || lead.call_recording?.createdAt
-      };
-    }
-    // Fallback to database data
-    if (lead?.call_recording) {
-      return {
-        conversationId: lead.call_recording.elevenlabs_conversation_id,
-        createdAt: lead.call_recording.createdAt
-      };
-    }
-    return { conversationId: null, createdAt: null };
-  }
+  const timestamp = new Date().toISOString().split('T')[0];
+  const filename = `leads_export_${timestamp}.csv`;
+
+  exportToCSV(leads, filename);
+};
 
   return (
     <DashboardLayout>
@@ -872,6 +735,7 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
                     </CardContent>
                   </Card>
 
+                  {/* Conversation History Section */}
                   <Card>
                     {/* <CardHeader className="pb-3"> */}
                     <CardHeader className="pb-0">
@@ -907,46 +771,8 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
                   </Card>
 
                   <Card>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-md font-semibold">CALL RECORDING</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      {(() => {
-                        const audioUrl = getAudioUrl(selectedLead);
-                        const metadata = getRecordingMetadata(selectedLead);
-
-                        return audioUrl ? (
-                          <ModernAudioPlayer
-                            src={audioUrl}
-                            recordingId={metadata.conversationId}
-                            createdAt={metadata.createdAt ? new Date(metadata.createdAt).toLocaleString('en-IN', {
-                              timeZone: 'Asia/Kolkata',
-                              day: '2-digit',
-                              month: 'short',
-                              year: 'numeric',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                              hour12: true,
-                            }) : 'Unknown'}
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center py-12 text-center">
-                            <div className="rounded-full bg-muted p-3 mb-4">
-                              <Volume2 className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                            <p className="text-sm font-medium text-muted-foreground">
-                              No call recording available
-                            </p>
-                          </div>
-                        );
-                      })()}
-                    </CardContent>
-                  </Card>
-
-                  {/* Conversation History Section */}
-                  <Card>
                     <CardHeader className="pb-0">
-                      <h3 className="text-md font-semibold">CONVERSATION HISTORY</h3>
+                      <h3 className="text-md font-semibold">Conversation History</h3>
                     </CardHeader>
                     <CardContent>
                       {hasConversations ? (

@@ -1,0 +1,53 @@
+GET http://localhost:8001/api/v1/user
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwidXNlcm5hbWUiOiJDaGludGFuIiwiaWF0IjoxNzIyNzc3NzI2LCJleHAiOjE3MjI3Nzc3NDZ9.xO0XRpJPFVrAnxluIJEeFObCYdSSnu_TBL4qo1HOzcc
+
+### 
+
+POST http://localhost:8001/api/v1/login
+content-type: application/json
+// below token is useless and only for Request client Extension
+Authorization: Bearer sdfdsfsdfsdfsdf.wqewed333asffasf.asass
+
+{
+    "email": "chintan_crm@yopmail.com",
+    "password": "Chintan"
+}
+
+### 
+
+// Get Token
+POST http://localhost:8001/api/v1/token
+content-type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwidXNlcm5hbWUiOiJDaGludGFuIiwiaWF0IjoxNzIyNzc3Njk3fQ.Nk69IR4V-bFYesPZN9HGSjQInWF38PxWQ_qknhRdHoU
+
+{
+    "id": 4,
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwidXNlcm5hbWUiOiJDaGludGFuIiwiaWF0IjoxNzIyNzczNzQ2fQ.nh4wuCwOSgp41Lb-Lm-6FjmLvblZOaEn3nHNzUNOfT4"
+}
+
+### 
+
+// Logout
+POST http://localhost:8001/api/v1/logout
+content-type: application/json
+Authorization: Bearer sdfsdf.sfdfsdfsdf.sdfsdf
+
+{
+    "id": 4,
+}
+
+### 
+
+// Register
+POST http://localhost:8001/api/v1/register
+content-type: application/json
+Authorization: Bearer sdfdsfsdfsdfsdf.wqewed333asffasf.asass
+
+{
+    "username": "admin",
+    "first_name": "Admin",
+    "last_name": "_",
+    "email": "admin_phlex1@yopmail.com",
+    "password": "admin@1234",
+    "number": 1234678124
+}

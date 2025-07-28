@@ -4,7 +4,6 @@ import React from "react"
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { useTeamStore } from "@/stores/team-store"
-import { useDashboardStore } from "@/stores/dashboard-store"
 import { leadsApi } from "@/lib/api"
 import { Pagination } from "@/components/ui/pagination"
 import { useWebSocket } from "@/lib/websocket"
@@ -12,12 +11,11 @@ import { toast } from "sonner"
 
 export const useLeadList = () => {
   const queryClient = useQueryClient();
-  const { selectedProjectId } = useDashboardStore();
 
   // WebSocket subscription for real-time lead updates
   // useWebSocket('leadUpdate', (data) => {
   // Invalidate and refetch leads when we receive an update
-  // queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId] });
+  // queryClient.invalidateQueries({ queryKey: ["getAllLeads"] });
   // });
 
   const {
@@ -27,10 +25,9 @@ export const useLeadList = () => {
     error,
     isSuccess,
   } = useQuery({
-    queryKey: ["getAllLeads", selectedProjectId],
-    queryFn: () => leadsApi.getAllLeads(selectedProjectId || undefined),
+    queryKey: ["getAllLeads"],
+    queryFn: leadsApi.getAllLeads,
     staleTime: 5 * 60 * 1000,
-    enabled: !!selectedProjectId, // Only fetch when a project is selected
   })
 
 
@@ -47,14 +44,12 @@ export const useLeadList = () => {
 export function useLeads() {
   const queryClient = useQueryClient()
 
-  const { selectedProjectId } = useDashboardStore();
-
   const addLeadMutation = useMutation({
-    mutationFn: (lead: any) => leadsApi.addLead({ ...lead, projectId: selectedProjectId }),
+    mutationFn: (lead: any) => leadsApi.addLead(lead),
     onSuccess: (newLead) => {
       toast.success(`Lead created successfully!`)
       // addMember(newMember)
-      queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId] })
+      queryClient.invalidateQueries({ queryKey: ["getAllLeads"] })
     },
     onError: (error: any) => {
       toast.error('Error creating Lead', {
@@ -70,7 +65,7 @@ export function useLeads() {
       toast.success(`Lead updated successfully!`)
       // Update store with the full updated member from API response
       // updateMember(updatedMember._id, updatedMember)
-      queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId] })
+      queryClient.invalidateQueries({ queryKey: ["getAllLeads"] })
     },
     onError: (error: any) => {
       toast.error('Error updating Lead', {
@@ -84,7 +79,7 @@ export function useLeads() {
     onSuccess: (_, id) => {
       toast.success(`Lead Deleted successfully!`)
       // removeMember(id)
-      queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId] })
+      queryClient.invalidateQueries({ queryKey: ["getAllLeads"] })
     },
     onError: (error: any) => {
       toast.error('Error updating Lead', {

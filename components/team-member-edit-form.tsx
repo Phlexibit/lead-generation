@@ -8,8 +8,6 @@ import { useForm } from "react-hook-form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useProjects } from "@/hooks/use-projects"
 import { useAuth } from "@/hooks/use-auth"
-import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
 
 // Roles synced with the Add Team Member form
 const roles = [
@@ -36,8 +34,6 @@ export default function TeamMemberEditForm({ initialData, onSubmit, onCancel }: 
     const { user } = useAuth()
     // Fetch projects to populate the selection dropdown
     const { data: projectsData, isLoading: projectsLoading, isError: projectsError } = useProjects(user?._id)
-
-    console.log('initialData', initialData)
 
     const form = useForm<TeamMemberEditData>({
         defaultValues: {
@@ -69,22 +65,6 @@ export default function TeamMemberEditForm({ initialData, onSubmit, onCancel }: 
             delete data.password;
         }
         onSubmit(data);
-    }
-
-    const handleProjectChange = (projectId: string, currentProjects: Project[]) => {
-        const selectedProject = projectsData?.find(p => p._id === projectId)
-        if (selectedProject) {
-            // Check if project is already selected
-            const isAlreadySelected = currentProjects.some(p => p._id === projectId)
-            if (!isAlreadySelected) {
-                return [...currentProjects, selectedProject]
-            }
-        }
-        return currentProjects
-    }
-
-    const removeProject = (projectId: string, currentProjects: Project[]) => {
-        return currentProjects.filter(p => p._id !== projectId)
     }
 
     return (
@@ -188,73 +168,38 @@ export default function TeamMemberEditForm({ initialData, onSubmit, onCancel }: 
                             </FormItem>
                         )}
                     />
-                    {/* Projects */}
+                    {/* Project */}
                     <FormField
                         control={form.control}
                         name="projects"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Projects</FormLabel>
+                                <FormLabel>Project</FormLabel>
                                 <Select
-                                    value=""
+                                    value={field.value?.[0]?._id || ""}
                                     onValueChange={(projectId) => {
-                                        const updatedProjects = handleProjectChange(projectId, field.value || [])
-                                        field.onChange(updatedProjects)
+                                        const selectedProject = projectsData?.find(p => p._id === projectId);
+                                        if (selectedProject) {
+                                            field.onChange([selectedProject]);
+                                        }
                                     }}
                                     disabled={projectsLoading || projectsError}
                                 >
                                     <FormControl>
                                         <SelectTrigger>
                                             <SelectValue placeholder={
-                                                projectsLoading ? "Loading..." : (projectsError ? "Error" : "Select projects")
+                                                projectsLoading ? "Loading..." : (projectsError ? "Error" : "Select a project")
                                             } />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {projectsData?.filter(project => 
-                                            !field.value?.some(p => p._id === project._id)
-                                        ).map((project) => (
+                                        {projectsData?.map((project) => (
                                             <SelectItem key={project._id} value={project._id}>
                                                 {project.projectName}
                                             </SelectItem>
                                         ))}
-                                        {projectsData?.filter(project => 
-                                            !field.value?.some(p => p._id === project._id)
-                                        ).length === 0 && (
-                                            <SelectItem value="no-projects" disabled>
-                                                {field.value?.length === projectsData?.length 
-                                                    ? "All projects selected" 
-                                                    : "No projects available"}
-                                            </SelectItem>
-                                        )}
                                     </SelectContent>
                                 </Select>
-                                
-                                {/* Selected Projects as compact badges */}
-                                {field.value && field.value.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-2 max-h-20 overflow-y-auto">
-                                        {field.value.map((project) => (
-                                            <Badge 
-                                                key={project._id} 
-                                                variant="secondary" 
-                                                className="flex items-center gap-1 text-xs py-1 px-2 h-auto"
-                                            >
-                                                <span className="truncate max-w-[120px]">{project.projectName}</span>
-                                                <X 
-                                                    className="h-3 w-3 cursor-pointer hover:text-destructive flex-shrink-0" 
-                                                    onClick={() => {
-                                                        const updatedProjects = removeProject(project._id, field.value || [])
-                                                        field.onChange(updatedProjects)
-                                                    }}
-                                                />
-                                            </Badge>
-                                        ))}
-                                    </div>
-                                )}
-                                
-                                {projectsError && (
-                                    <p className="text-sm text-destructive">Failed to load projects</p>
-                                )}
                             </FormItem>
                         )}
                     />

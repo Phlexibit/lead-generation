@@ -25,7 +25,7 @@ interface TeamMember {
   email: string;
   first_name: string;
   last_name: string;
-  phoneNo: string;
+  number: string;
   roles: Role[];
   password: string;
 }

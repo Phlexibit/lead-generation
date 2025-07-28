@@ -9,8 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TeamMember, Role, Project } from "@/lib/api"
 import { useProjects } from "@/hooks/use-projects"
 import { useAuth } from "@/hooks/use-auth"
-import { Badge } from "@/components/ui/badge"
-import { X } from "lucide-react"
 
 type NewTeamMember = Omit<TeamMember, '_id'>;
 
@@ -64,22 +62,11 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }: Team
   const handleProjectChange = (projectId: string) => {
     const selectedProject = availableProjects?.find(p => p._id === projectId)
     if (selectedProject) {
-      // Check if project is already selected
-      const isAlreadySelected = formData.projects.some(p => p._id === projectId)
-      if (!isAlreadySelected) {
-        setFormData({
-          ...formData,
-          projects: [...formData.projects, selectedProject]
-        })
-      }
+      setFormData({
+        ...formData,
+        projects: [selectedProject]
+      })
     }
-  }
-
-  const removeProject = (projectId: string) => {
-    setFormData({
-      ...formData,
-      projects: formData.projects.filter(p => p._id !== projectId)
-    })
   }
 
   return (
@@ -153,9 +140,9 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }: Team
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="project">Projects</Label>
+          <Label htmlFor="project">Project</Label>
           <Select
-            value=""
+            value={formData.projects?.[0]?._id || ""}
             onValueChange={handleProjectChange}
             disabled={projectsLoading}
           >
@@ -165,50 +152,21 @@ export default function TeamMemberForm({ initialData, onSubmit, onCancel }: Team
                   ? "Loading projects..." 
                   : projectsError 
                     ? "Error loading projects" 
-                    : "Select projects"
+                    : "Select a project"
               } />
             </SelectTrigger>
             <SelectContent>
-              {availableProjects?.filter(project => 
-                !formData.projects.some(p => p._id === project._id)
-              ).map((project) => (
+              {availableProjects?.map((project) => (
                 <SelectItem key={project._id} value={project._id}>
-                  {project.projectName}
+                  <div className="flex flex-col">
+                    <span className="font-medium">{project.projectName}</span>
+                  </div>
                 </SelectItem>
               ))}
-              {availableProjects?.filter(project => 
-                !formData.projects.some(p => p._id === project._id)
-              ).length === 0 && (
-                <SelectItem value="no-projects" disabled>
-                  {formData.projects.length === availableProjects?.length 
-                    ? "All projects selected" 
-                    : "No projects available"}
-                </SelectItem>
-              )}
             </SelectContent>
           </Select>
-          
-          {/* Selected Projects as compact badges */}
-          {formData.projects.length > 0 && (
-            <div className="flex flex-wrap gap-1 mt-2 max-h-20 overflow-y-auto">
-              {formData.projects.map((project) => (
-                <Badge 
-                  key={project._id} 
-                  variant="secondary" 
-                  className="flex items-center gap-1 text-xs py-1 px-2 h-auto"
-                >
-                  <span className="truncate max-w-[120px]">{project.projectName}</span>
-                  <X 
-                    className="h-3 w-3 cursor-pointer hover:text-destructive flex-shrink-0" 
-                    onClick={() => removeProject(project._id)}
-                  />
-                </Badge>
-              ))}
-            </div>
-          )}
-          
           {projectsError && (
-            <p className="text-sm text-destructive">Failed to load projects</p>
+            <p className="text-sm text-red-500">Failed to load projects. Using fallback data.</p>
           )}
         </div>
 

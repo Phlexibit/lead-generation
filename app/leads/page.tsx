@@ -102,13 +102,13 @@ const ReachedBadge = ({ HasReached }: { HasReached: boolean }) => {
 const CallImmediatelyBadge = ({ needsCall }: { needsCall: boolean }) => {
   if (needsCall) {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 animate-pulse">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 animate-pulse whitespace-nowrap min-w-fit">
         📞 Call Now
       </span>
     )
   } else {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap min-w-fit">
         📅 Standard
       </span>
     )
@@ -289,12 +289,16 @@ export default function LeadManagement() {
   const { selectedProjectId } = useDashboardStore()
   const queryClient = useQueryClient()
 
+  // Date filter state - using strings directly
+  const [startDate, setStartDate] = useState<string | undefined>()
+  const [endDate, setEndDate] = useState<string | undefined>()
+
   // Effect to refetch leads when project changes
   useEffect(() => {
     if (selectedProjectId) {
-      queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId] })
+      queryClient.invalidateQueries({ queryKey: ["getAllLeads", selectedProjectId, startDate, endDate] })
     }
-  }, [selectedProjectId, queryClient])
+  }, [selectedProjectId, queryClient, startDate, endDate])
 
   const {
     leads,
@@ -303,7 +307,7 @@ export default function LeadManagement() {
     isError: isLeadError,
     isLoading: isLeadLoading,
     isSuccess: isLeadSuccess
-  } = useLeadList()
+  } = useLeadList(startDate, endDate)
 
   const {
     addLead,
@@ -466,7 +470,7 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
 
     // Force a re-render to ensure UI updates
     queryClient.invalidateQueries({
-      queryKey: ["getAllLeads", selectedProjectId],
+      queryKey: ["getAllLeads", selectedProjectId, startDate, endDate],
       exact: false
     });
   };
@@ -507,6 +511,13 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
     setSelectedLead(lead)
     setIsDrawerOpen(true)
   }
+
+  // Handle date filter changes - now receives strings directly
+  const handleDateFilterChange = (newStartDate: string | undefined, newEndDate: string | undefined) => {
+    console.log('Leads date filter changed:', { newStartDate, newEndDate });
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+  };
 
   const columns = createColumns({
     onView: handleViewLead,
@@ -717,6 +728,9 @@ const handleLeadAudioUpdate = (audioUpdate: any) => {
                       "createdAt"
                     ]
                   }
+                  showDateFilter={true}
+                  onDateFilterChange={handleDateFilterChange}
+                  pagination={pagination}
                 />
               </TabsContent>
             </Tabs>

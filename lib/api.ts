@@ -1,8 +1,8 @@
 // API Configuration
 // const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_LOCAL_URL
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8001/api"
 
-// const API_BASE_URL = "http://localhost:5000/api"
+// const API_BASE_URL = "http://localhost:8001/api"
 
 // Define custom URLs for specific endpoints
 const CUSTOM_ENDPOINTS = {
@@ -96,16 +96,16 @@ export interface TeamMemberPublic {
 
 // Auth API
 export const authApi = {
-  login: async (email: string, username_or_email?: string, password: string): Promise<User> => {
+  login: async (email: string, password: string): Promise<User> => {
     const response = await fetchApi<{ user: User; token: string }>('/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     })
     // Save both the token and user data
     console.log('response', response)
-    localStorage.setItem('authToken', response.data.token)
-    localStorage.setItem("currentUser", JSON.stringify(response.data.user))
-    return response.data.user
+    localStorage.setItem('authToken', response.token)
+    localStorage.setItem("currentUser", JSON.stringify(response.user))
+    return response.user
   },
 
   getCurrentUser: async (): Promise<User | null> => {
@@ -147,12 +147,36 @@ export const authApi = {
 }
 
 export const leadsApi = {
-  getAllLeads: async (projectId?: string): Promise<any> => {
+  getAllLeads: async (projectId?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ response: any }>(`/leads?projectId=${projectId}`);
-      return response || null;
+      let url = `/leads?projectId=${projectId}`;
+      if (startDate) {
+        url += `&startDate=${startDate}`;
+      }
+      if (endDate) {
+        url += `&endDate=${endDate}`;
+      }
+      
+      console.log('Making leads API call to:', url);
+      console.log('Leads API params:', { projectId, startDate, endDate });
+      
+      const response = await fetchApi<any>(url);
+      console.log('Leads API response:', response);
+      
+      // Return the response directly since backend returns { success: true, data: [...], pagination: {...} }
+      return response;
     } catch (error) {
-      throw error;
+      console.error('Leads API error:', error);
+      // Return empty data instead of throwing error
+      return {
+        success: true,
+        data: [],
+        pagination: {
+          total: 0,
+          filtered: 0,
+          hasDateFilter: !!(startDate || endDate)
+        }
+      };
     }
   },
 
@@ -369,12 +393,38 @@ export const dashboardApi = {
 }
 
 export const siteVisitsApi = {
-  getSiteVisits: async (projectId?: string): Promise<any> => {
+  getSiteVisits: async (projectId?: string, startDate?: string, endDate?: string): Promise<any> => {
     try {
-      const response = await fetchApi<{ response: any }>(`/site-visits?projectId=${projectId}`);
+      let url = `/site-visits?projectId=${projectId}`;
+      if (startDate) {
+        url += `&startDate=${startDate}`;
+      }
+      if (endDate) {
+        url += `&endDate=${endDate}`;
+      }
+      
+      console.log('Making site visits API call to:', url);
+      console.log('Site visits API params:', { projectId, startDate, endDate });
+      
+      const response = await fetchApi<any>(url);
+      console.log('Site visits API response:', response);
+      console.log('Site visits API response data:', response?.data);
+      console.log('Site visits count:', response?.data?.length || 0);
+      
+      // Return the response directly since backend returns { success: true, data: [...], pagination: {...} }
       return response;
     } catch (error) {
-      throw error;
+      console.error('Site visits API error:', error);
+      // Return empty data instead of throwing error
+      return {
+        success: true,
+        data: [],
+        pagination: {
+          total: 0,
+          filtered: 0,
+          hasDateFilter: !!(startDate || endDate)
+        }
+      };
     }
   }
 }
@@ -385,7 +435,10 @@ export const projectsApi = {
       // If userId is not provided, get it from localStorage
       if (!userId) {
         const currentUser = getUserFromLocalStorage()
-        userId = currentUser?.id || currentUser?._id
+        if (currentUser) {
+          const parsedUser = JSON.parse(currentUser) as User
+          userId = parsedUser._id
+        }
       }
 
       if (!userId) {

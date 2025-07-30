@@ -80,13 +80,13 @@ const ReachedBadge = ({ HasReached }: { HasReached: boolean }) => {
 const CallImmediatelyBadge = ({ needsCall }: { needsCall: boolean }) => {
   if (needsCall) {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 animate-pulse">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 animate-pulse whitespace-nowrap min-w-fit">
         📞 Call Now
       </span>
     )
   } else {
     return (
-      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-blue-800 border border-slate-200 hover:bg-slate-100">
+      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-blue-800 border border-slate-200 hover:bg-slate-100 whitespace-nowrap min-w-fit">
         <FaLongArrowAltDown height={"10px"} width={"10px"} color="#1e40af" /> Low
       </span>
     )

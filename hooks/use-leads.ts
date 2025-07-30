@@ -10,9 +10,12 @@ import { Pagination } from "@/components/ui/pagination"
 import { useWebSocket } from "@/lib/websocket"
 import { toast } from "sonner"
 
-export const useLeadList = () => {
+export const useLeadList = (startDate?: string, endDate?: string) => {
   const queryClient = useQueryClient();
   const { selectedProjectId } = useDashboardStore();
+
+  // Debug logging
+  console.log('useLeadList called with:', { selectedProjectId, startDate, endDate });
 
   // WebSocket subscription for real-time lead updates
   // useWebSocket('leadUpdate', (data) => {
@@ -27,12 +30,17 @@ export const useLeadList = () => {
     error,
     isSuccess,
   } = useQuery({
-    queryKey: ["getAllLeads", selectedProjectId],
-    queryFn: () => leadsApi.getAllLeads(selectedProjectId || undefined),
+    queryKey: ["getAllLeads", selectedProjectId, startDate, endDate],
+    queryFn: () => {
+      console.log('Fetching leads with params:', { selectedProjectId, startDate, endDate });
+      return leadsApi.getAllLeads(selectedProjectId || undefined, startDate, endDate);
+    },
     staleTime: 5 * 60 * 1000,
     enabled: !!selectedProjectId, // Only fetch when a project is selected
   })
 
+  // Debug logging for response
+  console.log('Leads response:', { data, isLoading, isError, error });
 
   return {
     leads: data?.data || [],

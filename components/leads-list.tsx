@@ -214,13 +214,13 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
   const CallImmediatelyBadge = ({ needsCall }: { needsCall: boolean }) => {
     if (needsCall) {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 animate-pulse">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100 animate-pulse whitespace-nowrap min-w-fit">
           📞 Call Now
         </span>
       )
     } else {
       return (
-        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100">
+        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium transition-colors bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 whitespace-nowrap min-w-fit">
           📅 Standard
         </span>
       )
@@ -289,7 +289,7 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
           </div>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
+          <div className="table-responsive">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -304,7 +304,7 @@ export default function LeadsList({ leads, onEdit, onDelete, pagination }: any) 
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leads.map((lead) => (
+                {leads.map((lead: any) => (
                   <TableRow key={lead._id} >
                     <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.first_name}</TableCell>
                     <TableCell className="font-medium" onClick={() => handleViewLead(lead)}>{lead.contact_number}</TableCell>

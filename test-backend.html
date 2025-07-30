@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backend API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; }
+        input { padding: 5px; margin: 5px; }
+        .results { margin-top: 10px; padding: 10px; background: #f5f5f5; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    
+    <div class="test-section">
+        <h3>Test Backend Connection</h3>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connection-results" class="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Test Date Filtering</h3>
+        <label>Start Date: <input type="date" id="startDate"></label>
+        <label>End Date: <input type="date" id="endDate"></label>
+        <button onclick="testDateFilter()">Test Date Filter</button>
+        <div id="date-filter-results" class="results"></div>
+    </div>
+
+    <div class="test-section">
+        <h3>Quick Tests</h3>
+        <button onclick="testToday()">Test Today</button>
+        <button onclick="testYesterday()">Test Yesterday</button>
+        <button onclick="testThisWeek()">Test This Week</button>
+        <div id="quick-test-results" class="results"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001/api';
+        
+        function log(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const timestamp = new Date().toLocaleTimeString();
+            element.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+        }
+
+        async function testConnection() {
+            const resultsDiv = document.getElementById('connection-results');
+            resultsDiv.innerHTML = '';
+            
+            try {
+                log('connection-results', 'Testing backend connection...', 'info');
+                
+                const response = await fetch(`${API_BASE}/leads?projectId=test-project`);
+                log('connection-results', `Response status: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('connection-results', '✅ Backend is working!', 'success');
+                    log('connection-results', `Response: ${JSON.stringify(data, null, 2)}`, 'info');
+                } else {
+                    const error = await response.json();
+                    log('connection-results', `❌ Backend error: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                log('connection-results', `❌ Connection failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDateFilter() {
+            const resultsDiv = document.getElementById('date-filter-results');
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+            
+            resultsDiv.innerHTML = '';
+            
+            if (!startDate || !endDate) {
+                log('date-filter-results', '❌ Please select both start and end dates', 'error');
+                return;
+            }
+            
+            try {
+                log('date-filter-results', `Testing date filter: ${startDate} to ${endDate}`, 'info');
+                
+                const url = `${API_BASE}/leads?projectId=test-project&startDate=${startDate}&endDate=${endDate}`;
+                log('date-filter-results', `URL: ${url}`, 'info');
+                
+                const response = await fetch(url);
+                log('date-filter-results', `Response status: ${response.status}`, 'info');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    log('date-filter-results', '✅ Date filter working!', 'success');
+                    log('date-filter-results', `Found ${data.data?.length || 0} leads`, 'info');
+                    log('date-filter-results', `Pagination: ${JSON.stringify(data.pagination)}`, 'info');
+                } else {
+                    const error = await response.json();
+                    log('date-filter-results', `❌ Date filter error: ${error.message}`, 'error');
+                }
+            } catch (error) {
+                log('date-filter-results', `❌ Date filter failed: ${error.message}`, 'error');
+            }
+        }
+
+        function testToday() {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('startDate').value = today;
+            document.getElementById('endDate').value = today;
+            testDateFilter();
+        }
+
+        function testYesterday() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            document.getElementById('startDate').value = yesterdayStr;
+            document.getElementById('endDate').value = yesterdayStr;
+            testDateFilter();
+        }
+
+        function testThisWeek() {
+            const today = new Date();
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            const endOfWeek = new Date(startOfWeek);
+            endOfWeek.setDate(startOfWeek.getDate() + 6);
+            
+            const startStr = startOfWeek.toISOString().split('T')[0];
+            const endStr = endOfWeek.toISOString().split('T')[0];
+            
+            document.getElementById('startDate').value = startStr;
+            document.getElementById('endDate').value = endStr;
+            testDateFilter();
+        }
+
+        // Auto-test connection on page load
+        window.onload = function() {
+            log('connection-results', 'Page loaded, ready to test...', 'info');
+        };
+    </script>
+</body>
+</html>

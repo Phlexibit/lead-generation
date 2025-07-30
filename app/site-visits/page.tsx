@@ -259,7 +259,15 @@ const ChatUI: React.FC<ChatUIProps> = ({ conversations, expanded }) => {
 export default function SiteVisitManagement() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuthStore()
 
-  const { data: siteVisitsData, isLoading } = useSiteVisits()
+  // Date filter state - using strings directly
+  const [startDate, setStartDate] = useState<string | undefined>()
+  const [endDate, setEndDate] = useState<string | undefined>()
+
+  console.log('Site visits page render - dates:', { startDate, endDate });
+
+  const { data: siteVisitsData, isLoading, pagination } = useSiteVisits(startDate, endDate)
+
+  console.log('Site visits data:', siteVisitsData);
 
   const [expanded, setExpanded] = useState(false);
 
@@ -305,6 +313,17 @@ export default function SiteVisitManagement() {
     setEditingLead(member)
     setShowEditDialog(true)
   }
+
+  // Handle date filter changes - now receives strings directly
+  const handleDateFilterChange = (newStartDate: string | undefined, newEndDate: string | undefined) => {
+    console.log('Site visits date filter changed:', { newStartDate, newEndDate });
+    console.log('Previous dates:', { startDate, endDate });
+    
+    setStartDate(newStartDate);
+    setEndDate(newEndDate);
+    
+    console.log('Setting new dates:', { newStartDate, newEndDate });
+  };
 
   // Create columns with handlers
   const columns = createColumns({
@@ -374,16 +393,21 @@ export default function SiteVisitManagement() {
             <Tabs defaultValue="list" className="space-y-4">
               <TabsContent value="list" className="space-y-4">
                 <DataTable
-                  data={siteVisitsData} // Replace with your actual site visits data
+                  data={siteVisitsData}
                   columns={columns}
                   handleCellClickCb={handleViewSiteVisit}
-                  clickableColumns={[
-                    "first_name",
-                    "project",
-                    "schedule_datetime",
-                    "contact_number",
-                    "status"
-                  ]}
+                  // For on View
+                  clickableColumns={
+                    [
+                      "first_name",
+                      "contact_number",
+                      "site_visit_date",
+                      "createdAt"
+                    ]
+                  }
+                  showDateFilter={true}
+                  onDateFilterChange={handleDateFilterChange}
+                  pagination={pagination}
                 />
 
                 {/* Commented out SiteVisitsList component */}
